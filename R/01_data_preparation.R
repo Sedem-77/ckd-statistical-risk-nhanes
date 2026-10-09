@@ -91,6 +91,7 @@ albcr_keep <- albcr %>%
 biopro_keep <- biopro %>%
   select(
     SEQN,
+    WTPH2YR,
     LBXSCR,
     LBXSUA,
     LBXSGL,
