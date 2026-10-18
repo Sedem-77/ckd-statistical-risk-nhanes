@@ -190,7 +190,7 @@ write_csv(
 #   - serum uric acid available
 #
 # Additional model-specific missingness will be handled and
-# reported explicitly when adjustment variables are introduced.
+# reported when adjustment variables are introduced.
 # ------------------------------------------------------------
 
 analysis_data <- ckd_data %>%
