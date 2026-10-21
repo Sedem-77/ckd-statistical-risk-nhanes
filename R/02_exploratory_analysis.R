@@ -236,6 +236,17 @@ cat(
   "\n"
 )
 
+psu_structure <- analysis_data %>%
+  distinct(SDMVSTRA, SDMVPSU) %>%
+  count(SDMVSTRA, name = "Number_of_PSUs")
+
+print(psu_structure)
+
+cat(
+  "Number of strata with only one observed PSU:",
+  sum(psu_structure$Number_of_PSUs == 1),
+  "\n"
+)
 
 # ------------------------------------------------------------
 # 9. Construct survey design
@@ -252,15 +263,15 @@ cat(
 #   masked primary sampling unit.
 #
 # nest = TRUE:
-#   identifies PSUs as nested within strata.
+#   identifies Primary Sampling Units (PSUs) as nested within strata.
 # ------------------------------------------------------------
 
-options(survey.lonely.psu = "adjust")
+options(survey.lonely.psu = "adjust") # we don't need this since the number of strata with only one PSU is 0
 
 nhanes_design <- svydesign(
   ids = ~SDMVPSU,
   strata = ~SDMVSTRA,
-  weights = ~WTPH2YR,
+  weights = ~WTPH2YR, 
   nest = TRUE,
   data = analysis_data
 )
@@ -295,69 +306,84 @@ write_csv(
   )
 )
 
+# ------------------------------------------------------------
+# 10A. Decompose laboratory-defined CKD classification
+#
+# Participants in the primary analytic sample have both eGFR
+# and UACR available. This table shows whether classification
+# arises from reduced eGFR, albuminuria, both, or neither.
+# ------------------------------------------------------------
 
+ckd_component_overlap <- analysis_data %>%
+  mutate(
+    CKD_component = case_when(
+      low_egfr == 0 & albuminuria == 0 ~ "Neither criterion",
+      low_egfr == 1 & albuminuria == 0 ~ "Reduced eGFR only",
+      low_egfr == 0 & albuminuria == 1 ~ "Albuminuria only",
+      low_egfr == 1 & albuminuria == 1 ~ "Both criteria"
+    )
+  ) %>%
+  count(CKD_component) %>%
+  mutate(
+    Percent = 100 * n / sum(n)
+  )
+
+print(ckd_component_overlap)
+
+write_csv(
+  ckd_component_overlap,
+  file.path(
+    table_dir,
+    "ckd_component_overlap.csv"
+  )
+)
 # ------------------------------------------------------------
 # 11. Survey-weighted prevalence
+#
 # ------------------------------------------------------------
 
-weighted_ckd <- svymean(
-  ~I(CKD == 1),
-  nhanes_design,
-  na.rm = TRUE
-)
-
-weighted_low_egfr <- svymean(
-  ~I(low_egfr == 1),
-  nhanes_design,
-  na.rm = TRUE
-)
-
-weighted_albuminuria <- svymean(
-  ~I(albuminuria == 1),
-  nhanes_design,
-  na.rm = TRUE
-)
-
-
-extract_prevalence <- function(object, outcome_name) {
+estimate_prevalence <- function(formula, design, outcome_name) {
   
-  estimate <- as.numeric(coef(object))
-  standard_error <- as.numeric(SE(object))
+  est <- svyciprop(
+    formula,
+    design,
+    method = "logit",
+    na.rm = TRUE
+  )
+  
+  ci <- confint(est)
   
   tibble(
     Outcome = outcome_name,
-    
     Weighted_prevalence =
-      100 * estimate,
-    
+      100 * as.numeric(coef(est)),
     SE =
-      100 * standard_error,
-    
+      100 * as.numeric(SE(est)),
     CI_lower =
-      100 * (estimate -
-               1.96 * standard_error),
-    
+      100 * ci[1],
     CI_upper =
-      100 * (estimate +
-               1.96 * standard_error)
+      100 * ci[2]
   )
 }
 
 
 weighted_prevalence <- bind_rows(
   
-  extract_prevalence(
-    weighted_ckd,
+  estimate_prevalence(
+    ~I(CKD == 1),
+    nhanes_design,
     "Laboratory-defined CKD"
   ),
   
-  extract_prevalence(
-    weighted_low_egfr,
+  estimate_prevalence(
+    ~I(low_egfr == 1),
+    nhanes_design,
     "Reduced eGFR (<60)"
   ),
   
-  extract_prevalence(
-    weighted_albuminuria,
+  estimate_prevalence(
+    ~I(albuminuria == 1),
+    nhanes_design,
     "Albuminuria (UACR >=30 mg/g)"
   )
 )
@@ -371,7 +397,6 @@ write_csv(
     "survey_weighted_prevalence.csv"
   )
 )
-
 
 # ------------------------------------------------------------
 # 12. Preliminary serum uric acid summary
