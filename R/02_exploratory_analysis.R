@@ -798,6 +798,178 @@ write_csv(
   )
 )
 
+
+# ============================================================
+# 19. Compare adult frame with primary analytic sample
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 19A. Create inclusion indicator and demographic variables
+# ------------------------------------------------------------
+
+sample_comparison <- ckd_data %>%
+  mutate(
+    
+    included_primary =
+      factor(
+        if_else(
+          primary_analysis_eligible,
+          1L,
+          0L
+        ),
+        levels = c(0, 1),
+        labels = c(
+          "Not included",
+          "Primary analytic sample"
+        )
+      ),
+    
+    sex = factor(
+      RIAGENDR,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    
+    age_group = cut(
+      RIDAGEYR,
+      breaks = c(20, 40, 60, Inf),
+      right = FALSE,
+      labels = c(
+        "20-39",
+        "40-59",
+        "60+"
+      )
+    ),
+    
+    race_ethnicity = factor(
+      RIDRETH3,
+      levels = c(1, 2, 3, 4, 6, 7),
+      labels = c(
+        "Mexican American",
+        "Other Hispanic",
+        "Non-Hispanic White",
+        "Non-Hispanic Black",
+        "Non-Hispanic Asian",
+        "Other/Multiracial"
+      )
+    )
+  )
+
+
+# ------------------------------------------------------------
+# 19B. Unweighted inclusion counts
+# ------------------------------------------------------------
+
+sample_inclusion_counts <- sample_comparison %>%
+  count(included_primary) %>%
+  mutate(
+    Percent =
+      100 * n / sum(n)
+  )
+
+print(sample_inclusion_counts)
+
+write_csv(
+  sample_inclusion_counts,
+  file.path(
+    table_dir,
+    "analytic_sample_inclusion_counts.csv"
+  )
+)
+
+
+# ------------------------------------------------------------
+# 19C. Unweighted demographic comparison
+#
+# This comparison describes observed differences between adults
+# retained versus not retained in the primary analytic sample.
+# It is a diagnostic of analytic-sample construction rather than
+# a population prevalence analysis.
+# ------------------------------------------------------------
+
+sample_demographic_comparison <- sample_comparison %>%
+  group_by(included_primary) %>%
+  summarise(
+    
+    N = n(),
+    
+    Mean_age =
+      mean(RIDAGEYR, na.rm = TRUE),
+    
+    Female_percent =
+      100 * mean(
+        RIAGENDR == 2,
+        na.rm = TRUE
+      ),
+    
+    .groups = "drop"
+  )
+
+print(sample_demographic_comparison)
+
+write_csv(
+  sample_demographic_comparison,
+  file.path(
+    table_dir,
+    "analytic_sample_demographic_comparison.csv"
+  )
+)
+
+
+# ------------------------------------------------------------
+# 19D. Age-group distribution by inclusion status
+# ------------------------------------------------------------
+
+sample_age_distribution <- sample_comparison %>%
+  count(
+    included_primary,
+    age_group
+  ) %>%
+  group_by(included_primary) %>%
+  mutate(
+    Percent =
+      100 * n / sum(n)
+  ) %>%
+  ungroup()
+
+print(sample_age_distribution)
+
+write_csv(
+  sample_age_distribution,
+  file.path(
+    table_dir,
+    "analytic_sample_age_distribution.csv"
+  )
+)
+
+
+# ------------------------------------------------------------
+# 19E. Race/ethnicity distribution by inclusion status
+# ------------------------------------------------------------
+
+sample_race_distribution <- sample_comparison %>%
+  count(
+    included_primary,
+    race_ethnicity
+  ) %>%
+  group_by(included_primary) %>%
+  mutate(
+    Percent =
+      100 * n / sum(n)
+  ) %>%
+  ungroup()
+
+print(sample_race_distribution)
+
+write_csv(
+  sample_race_distribution,
+  file.path(
+    table_dir,
+    "analytic_sample_race_distribution.csv"
+  )
+)
+
 # ------------------------------------------------------------
 # End of 02_exploratory_analysis.R
 # ------------------------------------------------------------
