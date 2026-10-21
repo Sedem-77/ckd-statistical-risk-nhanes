@@ -30,7 +30,7 @@
 library(dplyr)
 library(readr)
 library(ggplot2)
-
+library(tidyr)
 
 # if (!requireNamespace("survey", quietly = TRUE)) {
 #   install.packages("survey")
@@ -575,6 +575,228 @@ cat("\nExploratory analysis completed successfully.\n")
 cat("Tables saved to:", table_dir, "\n")
 cat("Figures saved to:", figure_dir, "\n")
 
+
+
+# ============================================================
+# 18. Descriptive characteristics of primary analytic sample
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 18A. Create analysis-friendly demographic variables
+# ------------------------------------------------------------
+
+analysis_data <- analysis_data %>%
+  mutate(
+    
+    age_group = cut(
+      RIDAGEYR,
+      breaks = c(20, 40, 60, Inf),
+      right = FALSE,
+      labels = c("20-39", "40-59", "60+")
+    ),
+    
+    sex = factor(
+      RIAGENDR,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    
+    race_ethnicity = factor(
+      RIDRETH3,
+      levels = c(1, 2, 3, 4, 6, 7),
+      labels = c(
+        "Mexican American",
+        "Other Hispanic",
+        "Non-Hispanic White",
+        "Non-Hispanic Black",
+        "Non-Hispanic Asian",
+        "Other/Multiracial"
+      )
+    ),
+    
+    ckd_group = factor(
+      CKD,
+      levels = c(0, 1),
+      labels = c(
+        "No laboratory-defined CKD",
+        "Laboratory-defined CKD"
+      )
+    )
+  )
+
+
+# Reconstruct survey design after adding variables
+nhanes_design <- svydesign(
+  ids = ~SDMVPSU,
+  strata = ~SDMVSTRA,
+  weights = ~WTPH2YR,
+  nest = TRUE,
+  data = analysis_data
+)
+
+
+# ------------------------------------------------------------
+# 18B. Unweighted sample counts by CKD status
+# ------------------------------------------------------------
+
+table1_counts <- analysis_data %>%
+  count(ckd_group, name = "Unweighted_N")
+
+print(table1_counts)
+
+write_csv(
+  table1_counts,
+  file.path(
+    table_dir,
+    "table1_unweighted_counts.csv"
+  )
+)
+
+
+# ------------------------------------------------------------
+# 18C. Survey-weighted continuous characteristics
+# ------------------------------------------------------------
+
+continuous_vars <- c(
+  "RIDAGEYR",
+  "LBXSUA",
+  "eGFR",
+  "URDACT"
+)
+
+continuous_labels <- c(
+  "Age (years)",
+  "Serum uric acid (mg/dL)",
+  "eGFR (mL/min/1.73 m^2)",
+  "UACR (mg/g)"
+)
+
+
+continuous_results <- bind_rows(
+  lapply(
+    seq_along(continuous_vars),
+    function(j) {
+      
+      variable <- continuous_vars[j]
+      
+      f <- as.formula(
+        paste0("~", variable)
+      )
+      
+      result <- svyby(
+        f,
+        ~ckd_group,
+        nhanes_design,
+        svymean,
+        na.rm = TRUE,
+        vartype = "se"
+      )
+      
+      tibble(
+        Characteristic = continuous_labels[j],
+        CKD_group = result$ckd_group,
+        Weighted_mean = result[[variable]],
+        SE = result[[paste0("se.", variable)]]
+      )
+    }
+  )
+)
+
+print(continuous_results)
+
+write_csv(
+  continuous_results,
+  file.path(
+    table_dir,
+    "table1_continuous_characteristics.csv"
+  )
+)
+
+
+# ------------------------------------------------------------
+# 18D. Survey-weighted categorical characteristics
+# ------------------------------------------------------------
+
+weighted_category_table <- function(
+    design,
+    variable,
+    label
+) {
+  
+  f <- as.formula(
+    paste0("~", variable)
+  )
+  
+  result <- svyby(
+    f,
+    ~ckd_group,
+    design,
+    svymean,
+    na.rm = TRUE
+  )
+  
+  long <- result %>%
+    select(
+      ckd_group,
+      starts_with(variable)
+    ) %>%
+    tidyr::pivot_longer(
+      cols = -ckd_group,
+      names_to = "Level",
+      values_to = "Weighted_proportion"
+    ) %>%
+    mutate(
+      Characteristic = label,
+      Level = sub(
+        paste0("^", variable),
+        "",
+        Level
+      ),
+      Weighted_percent =
+        100 * Weighted_proportion
+    ) %>%
+    select(
+      Characteristic,
+      Level,
+      ckd_group,
+      Weighted_percent
+    )
+  
+  long
+}
+
+
+categorical_results <- bind_rows(
+  
+  weighted_category_table(
+    nhanes_design,
+    "sex",
+    "Sex"
+  ),
+  
+  weighted_category_table(
+    nhanes_design,
+    "age_group",
+    "Age group"
+  ),
+  
+  weighted_category_table(
+    nhanes_design,
+    "race_ethnicity",
+    "Race/ethnicity"
+  )
+)
+
+print(categorical_results)
+
+write_csv(
+  categorical_results,
+  file.path(
+    table_dir,
+    "table1_categorical_characteristics.csv"
+  )
+)
 
 # ------------------------------------------------------------
 # End of 02_exploratory_analysis.R

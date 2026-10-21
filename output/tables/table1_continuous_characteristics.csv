@@ -1,0 +1,9 @@
+Characteristic,CKD_group,Weighted_mean
+Age (years),No laboratory-defined CKD,46.52174398822866
+Age (years),Laboratory-defined CKD,61.90133079127969
+Serum uric acid (mg/dL),No laboratory-defined CKD,5.124898026938431
+Serum uric acid (mg/dL),Laboratory-defined CKD,5.54456403564298
+eGFR (mL/min/1.73 m^2),No laboratory-defined CKD,99.05748953811134
+eGFR (mL/min/1.73 m^2),Laboratory-defined CKD,75.18880730043996
+UACR (mg/g),No laboratory-defined CKD,8.299453344849452
+UACR (mg/g),Laboratory-defined CKD,173.21680670230194

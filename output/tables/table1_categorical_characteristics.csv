@@ -1,0 +1,23 @@
+Characteristic,Level,ckd_group,Weighted_percent
+Sex,Male,No laboratory-defined CKD,48.919249979426716
+Sex,Female,No laboratory-defined CKD,51.08075002057307
+Sex,Male,Laboratory-defined CKD,47.00490153234763
+Sex,Female,Laboratory-defined CKD,52.995098467652426
+Age group,20-39,No laboratory-defined CKD,39.26536194567179
+Age group,40-59,No laboratory-defined CKD,35.20470779945711
+Age group,60+,No laboratory-defined CKD,25.52993025487084
+Age group,20-39,Laboratory-defined CKD,12.374483913245884
+Age group,40-59,Laboratory-defined CKD,26.254047068954804
+Age group,60+,Laboratory-defined CKD,61.37146901779948
+Race/ethnicity,Mexican American,No laboratory-defined CKD,7.366497317719423
+Race/ethnicity,Other Hispanic,No laboratory-defined CKD,10.174248894336277
+Race/ethnicity,Non-Hispanic White,No laboratory-defined CKD,60.62040551149731
+Race/ethnicity,Non-Hispanic Black,No laboratory-defined CKD,10.056017935285192
+Race/ethnicity,Non-Hispanic Asian,No laboratory-defined CKD,6.203136946657762
+Race/ethnicity,Other/Multiracial,No laboratory-defined CKD,5.57969339450382
+Race/ethnicity,Mexican American,Laboratory-defined CKD,5.145408041103749
+Race/ethnicity,Other Hispanic,Laboratory-defined CKD,6.519055084759576
+Race/ethnicity,Non-Hispanic White,Laboratory-defined CKD,60.927410107239524
+Race/ethnicity,Non-Hispanic Black,Laboratory-defined CKD,15.151560595877248
+Race/ethnicity,Non-Hispanic Asian,Laboratory-defined CKD,5.876871347932488
+Race/ethnicity,Other/Multiracial,Laboratory-defined CKD,6.379694823087539
