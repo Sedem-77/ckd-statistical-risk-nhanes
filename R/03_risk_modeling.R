@@ -224,6 +224,9 @@ extract_or <- function(model, model_name) {
   beta <- coef(model)
   se <- sqrt(diag(vcov(model)))
   
+  model_summary <- summary(model)
+  coef_table <- coef(model_summary)
+  
   tibble(
     Model = model_name,
     Term = names(beta),
@@ -233,18 +236,21 @@ extract_or <- function(model, model_name) {
     OR = exp(Beta),
     
     CI_lower = exp(
-      Beta - 1.96 * SE
+      Beta - qt(
+        0.975,
+        df = model$df.residual
+      ) * SE
     ),
     
     CI_upper = exp(
-      Beta + 1.96 * SE
+      Beta + qt(
+        0.975,
+        df = model$df.residual
+      ) * SE
     ),
     
     p_value =
-      2 * pnorm(
-        abs(Beta / SE),
-        lower.tail = FALSE
-      )
+      coef_table[, "Pr(>|t|)"]
   )
 }
 
