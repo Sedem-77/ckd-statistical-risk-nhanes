@@ -1,0 +1,3 @@
+Model,Brier_score
+Survey-weighted logistic model,0.1027065046635592
+Weighted GAM,0.10247035067588052
