@@ -384,7 +384,7 @@ gam_model <- gam(
     sex +
     race_ethnicity,
   family = binomial(link = "logit"),
-  weights = WTPH2YR,
+  weights = gam_weight,
   data = model_data,
   method = "REML"
 )
