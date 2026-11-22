@@ -22,6 +22,7 @@
 # Author: Denis Folitse
 # ============================================================
 
+rm(list = ls())
 
 # ------------------------------------------------------------
 # 1. Packages
@@ -398,6 +399,94 @@ write_csv(
   )
 )
 
+
+# Read the actual statistical results
+prevalence_results <- read_csv(
+  "output/tables/survey_weighted_prevalence.csv"
+)
+
+# Set plotting order
+prevalence_results <- prevalence_results %>%
+  mutate(
+    Outcome = factor(
+      Outcome,
+      levels = rev(Outcome)
+    )
+  )
+ckd_prevalence_plot <- ggplot(
+  prevalence_results,
+  aes(
+    x = Weighted_prevalence,
+    y = Outcome
+  )
+) +
+  geom_errorbar(
+    aes(
+      xmin = CI_lower,
+      xmax = CI_upper
+    ),
+    orientation = "y",
+    width = 0.15,
+    linewidth = 0.8,
+    colour = "#2C5282"
+  ) +
+  geom_point(
+    size = 3.5,
+    colour = "#2C5282"
+  ) +
+  geom_text(
+    aes(
+      x = CI_upper + 0.4,
+      label = sprintf(
+        "%.2f%% (%.2f%%–%.2f%%)",
+        Weighted_prevalence,
+        CI_lower,
+        CI_upper
+      )
+    ),
+    hjust = 0,
+    size = 3.5
+  ) +
+  scale_x_continuous(
+    limits = c(0, 22),
+    breaks = seq(0, 20, 5),
+    labels = function(x) paste0(x, "%")
+  ) +
+  labs(
+    title = "Survey-Weighted Prevalence of CKD Indicators",
+    subtitle = "NHANES 2021–2023; estimates with 95% confidence intervals",
+    x = "Survey-weighted prevalence (%)",
+    y = NULL,
+    caption = paste(
+      "Source: Preliminary NHANES 2021–2023 CKD analysis.",
+      "Laboratory-defined CKD is based on single-visit eGFR and UACR measurements."
+    )
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 11),
+    axis.text.y = element_text(size = 11),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.caption = element_text(
+      size = 9,
+      hjust = 0
+    ),
+    plot.margin = margin(15, 25, 15, 15)
+  )
+
+print(ckd_prevalence_plot)
+
+
+ggsave(
+  filename = "output/figures/ckd_prevalence_confidence_intervals.png",
+  plot = ckd_prevalence_plot,
+  width = 10,
+  height = 5,
+  dpi = 300,
+  bg = "white"
+)
 # ------------------------------------------------------------
 # 12. Preliminary serum uric acid summary
 # ------------------------------------------------------------
@@ -461,16 +550,14 @@ p1 <- ggplot(
   aes(x = LBXSUA)
 ) +
   geom_histogram(
-    bins = 35,
-    boundary = 0
+    bins = 35
   ) +
   labs(
     title = "Distribution of Serum Uric Acid",
     subtitle = "NHANES 2021-2023 primary analytic sample",
     x = "Serum uric acid (mg/dL)",
     y = "Number of participants"
-  ) +
-  theme_minimal(base_size = 12)
+  )
 
 ggsave(
   file.path(
@@ -492,7 +579,7 @@ p2 <- ggplot(
   analysis_data,
   aes(
     x = ckd_status,
-    y = LBXSUA
+    y = LBXSUA, colour = ckd_status, fill =ckd_status
   )
 ) +
   geom_boxplot(
@@ -505,8 +592,7 @@ p2 <- ggplot(
       "Single-visit laboratory classification; unweighted display",
     x = NULL,
     y = "Serum uric acid (mg/dL)"
-  ) +
-  theme_minimal(base_size = 12)
+  ) 
 
 ggsave(
   file.path(
