@@ -19,7 +19,7 @@
 #
 # Author: Denis Folitse
 # ============================================================
-
+rm(list = ls())
 
 # ------------------------------------------------------------
 # 1. Packages
@@ -512,9 +512,11 @@ ua_curve <- ggplot(
       ymin = lower_probability,
       ymax = upper_probability
     ),
+    fill = "red",
     alpha = 0.20
   ) +
   geom_line(
+    colour = "red",
     linewidth = 1
   ) +
   labs(
@@ -531,10 +533,10 @@ ua_curve <- ggplot(
       "Outcome based on single-visit eGFR and UACR criteria;",
       "curve is for functional-form assessment and does not establish causality."
     )
-  ) +
-  theme_minimal(base_size = 12)
+  )
 
 print(ua_curve)
+
 
 ggsave(
   filename = file.path(
@@ -544,7 +546,7 @@ ggsave(
   plot = ua_curve,
   width = 8,
   height = 5.5,
-  dpi = 300
+  dpi = 300,bg = "white"
 )
 
 
